@@ -1,0 +1,29 @@
+{
+    "name": "amolnovin/custom-html-snippets",
+    "description": "افزونه قطعه کدهای سفارشی برای وردپرس",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "wp-coding-standards/wpcs": "^3.0",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+    },
+    "scripts": {
+        "lint": "phpcs",
+        "fix": "phpcbf",
+        "test": [
+            "php tests/run-tests.php",
+            "php tests/integration.php",
+            "php tests/regression.php",
+            "php tests/compatibility.php"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
