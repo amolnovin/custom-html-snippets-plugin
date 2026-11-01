@@ -79,6 +79,10 @@ final class Renderer {
         add_action( 'wp_footer', array( $this, 'delay_engine' ), 5 );
 
         add_filter( 'the_content', array( $this, 'auto_inject' ), 20 );
+
+        // گسترش محتوای متنی شورت‌کد برای آنالیز سئو در افزونه‌های Yoast و Rank Math.
+        add_filter( 'wpseo_pre_analysis_post_content', array( $this, 'expand_content_for_seo_analysis' ), 10, 1 );
+        add_filter( 'rank_math/paper/auto_description', array( $this, 'expand_content_for_seo_analysis' ), 10, 1 );
     }
 
     /**
@@ -197,7 +201,7 @@ final class Renderer {
         if ( '1' === (string) Post_Type::meta( $post_id, '_chs_isolate' ) ) {
             $output = $this->render_isolated( $post_id );
             unset( $this->rendering[ $post_id ] );
-            return $output;
+            return $this->maybe_prepend_edit_box( $post_id, $output );
         }
 
         $html      = (string) Post_Type::meta( $post_id, '_chs_html' );
@@ -232,7 +236,9 @@ final class Renderer {
 
         unset( $this->rendering[ $post_id ] );
 
-        return (string) ob_get_clean();
+        $output = (string) ob_get_clean();
+
+        return $this->maybe_prepend_edit_box( $post_id, $output );
     }
 
     /** Render untrusted document structure in a separate browsing context.
@@ -248,7 +254,11 @@ final class Renderer {
         // Neutralize raw-text end tags in code fields; these fields contain code, not tags.
         $css = str_ireplace( '</style', '<\\/style', $css );
         $js = str_ireplace( '</script', '<\\/script', $js );
-        $base = '<base target="_blank"><style>html,body{margin:0;min-height:0}img{max-width:100%;height:auto}</style>';
+        $base = '<style>'
+            . 'html{margin:0;padding:0;min-height:0;overflow-y:hidden;overflow-x:auto;-webkit-text-size-adjust:100%}'
+            . 'body{margin:0;padding:0;min-height:0;overflow:hidden}'
+            . 'img{max-width:100%;height:auto}'
+            . '</style>';
         $head .= '<style>' . $css . '</style>';
         $foot .= '<script>' . $js . '</script>';
         $resize = file_get_contents( PATH . 'assets/js/isolation-child.js' );
@@ -268,7 +278,12 @@ final class Renderer {
         } else {
             $doc = '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' . $base . $head . '</head><body>' . $html . $foot . '</body></html>';
         }
-        return sprintf( '<iframe class="chs-isolated-frame" data-chs-snippet="%d" title="%s" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" style="display:block;width:100%%;height:600px;border:0" srcdoc="%s"></iframe>', $post_id, esc_attr( 'قطعه کد ' . $post_id ), esc_attr( $doc ) );
+        return sprintf(
+            '<iframe class="chs-isolated-frame" data-chs-snippet="%d" title="%s" scrolling="no" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation" referrerpolicy="no-referrer" style="display:block;width:100%%;height:auto;min-height:50px;border:0;overflow:hidden;" srcdoc="%s"></iframe>',
+            $post_id,
+            esc_attr( 'قطعه کد ' . $post_id ),
+            esc_attr( $doc )
+        );
     }
 
     /**
@@ -521,5 +536,105 @@ final class Renderer {
             echo "\n</script>\n";
             $this->delay_engine_enqueued = true;
         }
+    }
+
+    /**
+     * پیش‌افزودن نوار دسترسی سریع برای ویرایش قطعه‌کد توسط مدیران و نویسندگان مجاز.
+     *
+     * @param int    $post_id شناسه قطعه‌کد.
+     * @param string $output  خروجی رندرشده قطعه‌کد.
+     */
+    private function maybe_prepend_edit_box( int $post_id, string $output ): string {
+        if ( is_admin() || is_feed() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+            return $output;
+        }
+
+        if ( ! is_user_logged_in() ) {
+            return $output;
+        }
+
+        if ( ! current_user_can( manage_cap() ) && ! current_user_can( 'edit_post', $post_id ) ) {
+            return $output;
+        }
+
+        if ( ! apply_filters( 'chs_show_frontend_edit_box', true, $post_id ) ) {
+            return $output;
+        }
+
+        $edit_url = get_edit_post_link( $post_id );
+        if ( ! $edit_url ) {
+            $edit_url = admin_url( 'post.php?post=' . $post_id . '&action=edit' );
+        }
+
+        $title = get_the_title( $post_id );
+        if ( '' === trim( (string) $title ) ) {
+            $title = sprintf( __( 'قطعه‌کد #%d', TEXTDOMAIN ), $post_id );
+        }
+
+        $is_isolate = '1' === (string) Post_Type::meta( $post_id, '_chs_isolate' );
+        $mode_label = $is_isolate ? __( 'ایزوله (iframe)', TEXTDOMAIN ) : __( 'عادی', TEXTDOMAIN );
+
+        $bar = sprintf(
+            '<div class="chs-frontend-edit-bar" data-nosnippet="true" style="margin:8px 0;padding:6px 12px;background:#1d2327;color:#f0f0f1;border-radius:6px;font-size:12px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;display:flex;align-items:center;justify-content:space-between;gap:8px;direction:rtl;text-align:right;box-shadow:0 1px 3px rgba(0,0,0,0.25);position:relative;z-index:99999;">'
+            . '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+            . '<span style="display:inline-flex;align-items:center;color:#72aee6;">'
+            . '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>'
+            . '</span>'
+            . '<span>%s: <strong>%s</strong></span>'
+            . '<span style="background:#2c3338;padding:1px 6px;border-radius:3px;font-family:monospace;font-size:11px;color:#a7aaad;">#%d</span>'
+            . '<span style="background:%s;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;">%s</span>'
+            . '</div>'
+            . '<div>'
+            . '<a href="%s" target="_blank" rel="noopener noreferrer" style="background:#2271b1;color:#fff;padding:4px 10px;border-radius:4px;text-decoration:none;font-weight:500;font-size:11px;display:inline-flex;align-items:center;gap:4px;transition:background .15s;">'
+            . '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>'
+            . '%s'
+            . '</a>'
+            . '</div>'
+            . '</div>',
+            esc_html__( 'قطعه‌کد', TEXTDOMAIN ),
+            esc_html( $title ),
+            $post_id,
+            $is_isolate ? '#d63638' : '#00a32a',
+            esc_html( $mode_label ),
+            esc_url( $edit_url ),
+            esc_html__( 'ویرایش قطعه‌کد ↗', TEXTDOMAIN )
+        );
+
+        return $bar . $output;
+    }
+
+    /**
+     * گسترش محتوای متنی قطعه‌کد برای افزونه‌های سئو (مانند Yoast SEO و Rank Math)
+     * تا تعداد کلمات و تحلیل محتوا را به‌درستی تشخیص دهند.
+     *
+     * @param mixed $content محتوای نوشته.
+     * @return mixed
+     */
+    public function expand_content_for_seo_analysis( $content ) {
+        if ( ! is_string( $content ) || false === strpos( $content, '[my_snippet' ) ) {
+            return $content;
+        }
+
+        return preg_replace_callback(
+            '/\[my_snippet\b[^\]]*\bid\s*=\s*(["\']?)(\d+)\1[^\]]*\]/i',
+            static function ( array $matches ): string {
+                $snippet_id = absint( $matches[2] );
+                if ( ! $snippet_id || ! Post_Type::is_active( $snippet_id ) ) {
+                    return '';
+                }
+
+                $html = (string) Post_Type::meta( $snippet_id, '_chs_html' );
+                if ( '' === trim( $html ) ) {
+                    return '';
+                }
+
+                // حذف اسکریپت‌ها و استایل‌ها تا فقط متن خالص برای تحلیل سئو باقی بماند
+                $clean = preg_replace( '/<script\b[^>]*>(.*?)<\/script>/is', '', $html );
+                $clean = preg_replace( '/<style\b[^>]*>(.*?)<\/style>/is', '', (string) $clean );
+
+                return "\n" . (string) $clean . "\n";
+            },
+            $content
+        );
     }
 }

@@ -18,6 +18,17 @@ preg_match('/srcdoc="([^"]*)"/s',$html,$m);$doc=html_entity_decode($m[1],ENT_QUO
 verify('CSS present in isolated document',strpos($doc,'body{background:red}')!==false);
 verify('JS present in isolated document',strpos($doc,'document.body.dataset.test=1')!==false);
 verify('resize helper',strpos($doc,'chs:height')!==false);
+verify('iframe scrolling no',strpos($html,'scrolling="no"')!==false);
+verify('iframe overflow hidden',strpos($html,'overflow:hidden')!==false);
+verify('sandbox top navigation allowed for user gestures',strpos($html,'allow-top-navigation-by-user-activation')!==false);
+verify('no forced target blank base tag',strpos($doc,'<base target="_blank">')===false);
+verify('anchor link handler present in child script',strpos($doc,'chs:anchor_click')!==false);
+$GLOBALS['__logged_in']=true;$GLOBALS['__caps']['manage_options']=true;
+$logged_html=$r->render(41);
+verify('frontend edit bar rendered for logged-in admin',strpos($logged_html,'chs-frontend-edit-bar')!==false && strpos($logged_html,'http://x/edit?p=41')!==false);
+$GLOBALS['__logged_in']=false;
+$expanded=$r->expand_content_for_seo_analysis('متن قبل [my_snippet id="41"] متن بعد');
+verify('SEO filter expands text content for word counts',strpos($expanded,'مقاله')!==false && strpos($expanded,'[my_snippet')===false);
 ob_start();$r->output_header();$head=ob_get_clean();
 ob_start();$r->output_footer();$foot=ob_get_clean();
 verify('no head or footer leak',trim($head.$foot)==='');

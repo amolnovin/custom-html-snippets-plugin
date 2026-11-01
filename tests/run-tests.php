@@ -32,7 +32,7 @@ section( '۱) بارگذاری و معماری' );
 require __DIR__ . '/../custom-html-snippets/custom-html-snippets.php';
 
 check( 'افزونه بدون خطای مرگبار بارگذاری شد', true );
-check( 'نسخه ۳.۰.۲ است', CHS\VERSION === '3.0.2', CHS\VERSION );
+check( 'نسخه ۳.۰.۳ است', CHS\VERSION === '3.0.3', CHS\VERSION );
 check( 'فضای نام تعریف شده است', function_exists( 'AmolNovin\CHS\plugin' ) );
 check( 'PHP پیش‌فرض غیرفعال است', CHS_DISABLE_PHP === true );
 

@@ -4,7 +4,7 @@ Tags: code snippets, custom css, custom html, custom javascript, shortcode
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.0.2
+Stable tag: 3.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,12 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 `define( 'CHS_KEEP_DATA_ON_UNINSTALL', true );`
 
 == Changelog ==
+
+= 3.0.3 =
+* **رفع اسکرول و بهبود نمایش iframe:** حذف اسکرول‌بارهای عمودی ناخواسته، تنظیم اتمیک ارتفاع با ResizeObserver/MutationObserver و افزودن scrolling="no" و overflow: hidden.
+* **رفع لینک‌های لنگر و پیمایش در حالت ایزوله:** حذف تگ اجباری target="_blank"، پشتیبانی کامل از لینک‌های لنگر داخلی و خارجی (#hash)، پیمایش نرم صفحه والد به بخش مربوطه و امکان باز کردن لینک‌های عادی درون همان پنجره با allow-top-navigation-by-user-activation.
+* **نوار دسترسی سریع فرانت‌اند:** نمایش نوار مدیریت شیک بالای قطعه‌کد برای کاربران واردشده دارای دسترسی، شامل نام قطعه، شناسه، حالت اجرا و دکمه مستقیم برای ویرایش در پیشخوان وردپرس.
+* **بهبود سازگاری با سئو (Yoast / Rank Math):** گسترش محتوای متنی شورت‌کد در هوک‌های آنالیز سئو برای تشخیص دقیق تعداد کلمات و خوانایی نوشته.
 
 = 3.0.2 =
 * Prevent implicit WooCommerce product takeover; explicit chs_allow_product_takeover filter required.

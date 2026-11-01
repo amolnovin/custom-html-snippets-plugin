@@ -2,7 +2,7 @@
 /**
  * Plugin Name: افزونه قطعه کدهای سفارشی (HTML/CSS/JS)
  * Description: مدیریت حرفه‌ای قطعه کدهای HTML/CSS/JS/PHP با شورت‌کد، شرط‌های نمایش پیشرفته، بلوک گوتنبرگ، درون‌ریزی/برون‌بری و حالت ایمن.
- * Version: 3.0.2
+ * Version: 3.0.3
  * Author: AMOLNOVIN.IR
  * Author URI: http://AMOLNOVIN.IR
  * Requires at least: 5.8
@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 |--------------------------------------------------------------------------
 */
 
-const VERSION     = '3.0.2';
+const VERSION     = '3.0.3';
 const POST_TYPE   = 'custom_snippet';
 const TEXTDOMAIN  = 'custom-html-snippets';
 const CACHE_GROUP = 'chs_plugin';
